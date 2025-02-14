@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env
+
+# Virtual Environments
+venv/
+.env/
+*.venv
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Logs
+logs/
+*.log
+
+# IDEs y editores
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Configuración y dependencias
+.DS_Store
+*.sqlite3
+*.db
+node_modules/
+*.lock
+
+# Docker (si usas contenedores)
+docker-compose.override.yml
+*.dockerfile
+.dockerignore
+
+# Render y despliegue
+*.render.yaml
+.cache/
