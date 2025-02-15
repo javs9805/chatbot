@@ -5,12 +5,15 @@ from dotenv import load_dotenv
 import os
 import unicodedata
 from util import normalizar_texto, limpiar_clave_json
+import requests
+from pydantic import BaseModel
 load_dotenv()
 
 REDIS_HOST = os.getenv("url_redis")
 REDIS_PORT = os.getenv("port_redis")
 REDIS_DB = os.getenv("db_redis")
-
+TOKEN = os.getenv("t_key")
+BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
 app = FastAPI()
 
@@ -20,11 +23,27 @@ r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_resp
 chat_sessions = {}
 
 
-@app.get("/chat/")
-async def chat(user_id: str, message: str = Query(..., title="Mensaje del usuario")):
+class TelegramUpdate(BaseModel):
+    update_id: int
+    message: dict
+
+@app.post("/")
+async def telegram_webhook(update: TelegramUpdate):
+    data = update.model_dump()  # Cambiado de dict() a model_dump()
+    chat_id = data['message']['chat']['id']
+    nombre = data['message']['from']['first_name']
+    mensaje = data['message']['text']
+    text = chat(chat_id, mensaje, nombre)["response"]
+
+    requests.get(f"{BASE_URL}/sendMessage?chat_id={chat_id}&text={text}")
+    return update
+
+
+def chat(user_id: str, message: str, username:str):
     if user_id not in chat_sessions or message.lower() in ["reiniciar", "reset"]:
         chat_sessions[user_id] = {"step": "inicio"}
-        return {"response": "Hola, ¿cómo estás? Bienvenido al chatbot!\n"
+               
+        return {"response": f"Hola {username}, ¿cómo estás? Bienvenido al chatbot!\n"
                             "Ingresa una palabra clave de la materia que estás buscando, ejemplo: Aerodinamica"}
 
     # Paso 1: Buscar materias por palabra clave
