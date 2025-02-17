@@ -98,7 +98,7 @@ def main():
                                 "clases": clases["clases"]
                             }
                             secciones_asignatura[seccion] = asig_datos
-                            client.json().set("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.secciones.{seccion}",secciones_asignatura)
+                            client.json().set("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.secciones",secciones_asignatura)
                             print(f"se agrega {id_asignatura} - {seccion}")
                         except Exception as e:
                             print(f"No se pudo agregar {id_asignatura} - {seccion}")

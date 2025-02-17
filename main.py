@@ -106,7 +106,7 @@ def chat(user_id: str, message: str, username:str):
                     return {"response": "Por favor, ingresa la carrera a la que perteneces:\n"
                                         f"{carreras_texto}\n\nSelecciona una opción o 0 para volver atrás."}
 
-                if 0 <= seleccion < len(materias):
+                if 0 <= seleccion < len(materias_paginadas[chat_sessions[user_id]["page"]]):
                     materia = limpiar_clave_json(materias_paginadas[chat_sessions[user_id]["page"]][seleccion])
                     print(f"se ha seleccionado {materia}")
                     
@@ -182,7 +182,8 @@ def chat(user_id: str, message: str, username:str):
                 # Obtener datos de la sección seleccionada
                 seccion_data = carrera_data["asignaturas"][materia]["secciones"][seccion]
                 str_materia = carrera_data["asignaturas"][materia]["nombre"]
-                if "clases" in seccion_data:
+                print(seccion_data)
+                if "clases" in seccion_data and seccion_data["clases"] != {}:
                     clases_texto = "\n".join([f"{dia}: {clase['horario']} - Aula: {clase['aula']}" 
                                             for dia, clase in seccion_data["clases"].items()])
                     respuesta = (f"Estos son los datos de {str_materia} para la sección {seccion}:\n"
