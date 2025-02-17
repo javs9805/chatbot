@@ -26,8 +26,21 @@ class TelegramUpdate(BaseModel):
     update_id: int
     message: dict
 
-
+class chatSessionRemoveAuth(BaseModel):
+    key: int
+    
 PAGE_SIZE = 25  # Tamaño de cada página de materias
+
+@app.post("/resetear_chat_sessions")
+async def resetchat(key:str):
+    if key == "lokita304":
+        chat_sessions = ""
+
+@app.post("/get_chat_sessions")
+async def resetchat(key:str):
+    if key == "lokita304":
+        return chat_sessions
+    return "No tenes acceso"
 
 @app.post("/")
 async def telegram_webhook(update: TelegramUpdate):
