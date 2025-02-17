@@ -184,17 +184,22 @@ def chat(user_id: str, message: str, username:str):
                 str_materia = carrera_data["asignaturas"][materia]["nombre"]
                 print(seccion_data)
                 if "clases" in seccion_data and seccion_data["clases"] != {}:
-                    clases_texto = "\n".join([f"{dia}: {clase['horario']} - Aula: {clase['aula']}" 
-                                            for dia, clase in seccion_data["clases"].items()])
-                    respuesta = (f"Estos son los datos de {str_materia} para la sección {seccion}:\n"
-                             f"👨‍🏫 Profesor: {seccion_data['nom_prof']} {seccion_data['ape_prof']}\n"
-                             f"📚 Clases:\n{clases_texto}\n\n"
-                             "Si deseas consultar otra materia, no dudes en escribirme.")
-                else:
-                    respuesta = (f"Estos son los datos de {str_materia} para la sección {seccion}:\n"
-                             f"👨‍🏫 Profesor: {seccion_data['nom_prof']} {seccion_data['ape_prof']}\n"
-                             f"📚 Clases:\nAún no cuento con información acerca de los horarios y las aulas para esta materia 🥺.\n\n"
-                             "Si deseas consultar otra materia, no dudes en escribirme.")
+                    clases_texto = ""
+                    for dia, clase in seccion_data["clases"].items():
+                        if clase["horario"] != "" and clase['aula'] != "":
+                            clases_texto = clases_texto + f"{dia}: {clase['horario']} - Aula: {clase['aula']}"
+                        elif clase['horario'] != "":
+                            clases_texto = clases_texto + f"{dia}: {clase['horario']} - Aula: NO DISPONIBLE"
+                    if clases_texto != "":
+                        respuesta = (f"Estos son los datos de {str_materia} para la sección {seccion}:\n"
+                                f"👨‍🏫 Profesor: {seccion_data['nom_prof']} {seccion_data['ape_prof']}\n"
+                                f"📚 Clases:\n{clases_texto}\n\n"
+                                "Si deseas consultar otra materia, no dudes en escribirme.")
+                    else:
+                        respuesta = (f"Estos son los datos de {str_materia} para la sección {seccion}:\n"
+                                f"👨‍🏫 Profesor: {seccion_data['nom_prof']} {seccion_data['ape_prof']}\n"
+                                f"📚 Clases:\nAún no cuento con información acerca de los horarios y las aulas para esta materia 🥺.\n\n"
+                                "Si deseas consultar otra materia, no dudes en escribirme.")
 
                 # Reiniciar el chat después de responder
                 del chat_sessions[user_id]
