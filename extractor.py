@@ -49,11 +49,12 @@ def main():
     client.json().set("materias", f"$", {})
     # Recorrer cada hoja y mostrar las primeras filas
     sheet  = sheets[0]
-    if not client.json().get("materias"):
-        client.json().set("materias", ".", {})
+    if not client.json().get("por_carrera"):
+        client.json().set("por_carrera", ".", {})
     for sheet in sheets:
             print(f"\nProcesando hoja: {sheet}")
-
+            client.json().set("por_carrera", f"$.{sheet}", {})
+            client.json().set("por_carrera", f"$.{sheet}.asignaturas", {})
             # Leer los primeros 15 registros para inspección
             df = pd.read_excel(file_path, sheet_name=sheet, skiprows=10)
             df = df.map(normalizar_texto)
@@ -67,47 +68,46 @@ def main():
                 ape_prof = row.iloc[12] if not pd.isna(row.iloc[12]) else "No disponible"
                 clases = verificar_dias_de_clase(row)
                 if not pd.isna(str_asignatura) and not pd.isna(seccion):
-                    print(client.json().get("materias",f"$.{id_asignatura}.secciones.{seccion}"))
-                    if len(client.json().get("materias",f"$.{id_asignatura}")) == 0:
+                    print(f"Procesando '{str_asignatura}' - {seccion}")
+                    print("la asignatura no existe" if len(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}")) == 0 else "la asignatura existe")
+                    print("la seccion de la asignatura no existe" if len(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}.secciones.{seccion}")) == 0 else "la seccion de la asignatura existe")
+                    print(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}.secciones"))
+                    if len(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}")) == 0:
                         try:
-                            print(f"se agrega '{str_asignatura}' como '{id_asignatura}'")
-                            client.json().set("materias", f"$.{id_asignatura}", {"secciones": {seccion:{
-                                "nom_prof": nom_prof,
-                                "ape_prof": ape_prof,
-                                "clases": clases["clases"]
-                            }}})
-                            client.json().set("materias", f"$.{id_asignatura}.nombre", str_asignatura)
+                            print(f"se agrega '{str_asignatura}' con la seccion {seccion} como '{id_asignatura}'")
+                            client.json().set("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}",{})
+                            client.json().set("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.secciones",{})
+                            client.json().set("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.secciones.{seccion}",{
+                                                    "nom_prof": nom_prof,
+                                                    "ape_prof": ape_prof,
+                                                    "clases": clases["clases"]
+                                                }
+                                            )
+                            client.json().set("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.nombre", str_asignatura)
                         except Exception as e:
                             print(f"no se pudo agregar {id_asignatura}")
                             print(e)
                             return
-                    elif len(client.json().get("materias",f"$.{id_asignatura}.secciones.{seccion}")) == 0:
+                    elif len(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}.secciones.{seccion}")) == 0:
                         try:
-                            aux = client.json().get("materias", f"$.{id_asignatura}.secciones")[0]
-                            print(aux)
-                            aux[seccion] = {
+                            print(f"se agrega la seccion {seccion} de '{str_asignatura}'")
+                            secciones_asignatura = client.json().get("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.secciones")[0]
+                            asig_datos = {
                                 "nom_prof": nom_prof,
                                 "ape_prof": ape_prof,
                                 "clases": clases["clases"]
                             }
-                            client.json().set("materias", f"$.{id_asignatura}.secciones.{seccion}", aux)
+                            secciones_asignatura[seccion] = asig_datos
+                            client.json().set("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.secciones.{seccion}",secciones_asignatura)
                             print(f"se agrega {id_asignatura} - {seccion}")
                         except Exception as e:
                             print(f"No se pudo agregar {id_asignatura} - {seccion}")
                             print(f"nom_prof: {nom_prof}")
                             print(f"ape_prof: {ape_prof}")
-#                            print(f"clases: {clases["clases"]}")
                             print(e)
                             return                            
 
 
-    try:
-        json.dumps(materias)
-        print("valido")
-    except Exception as e:
-        print("no valido")
-
-    f.write(str(materias))
 
 
 

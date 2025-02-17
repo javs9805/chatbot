@@ -14,3 +14,7 @@ def limpiar_clave_json(texto):
         texto = normalizar_texto(texto)  # Eliminar acentos primero
         texto = re.sub(r"[^\w]", "", texto)  # Eliminar caracteres que no sean letras, números o guiones bajos
     return texto
+
+
+def split_array(array, V):
+    return [array[i:i + V] for i in range(0, len(array), V)]
