@@ -27,7 +27,7 @@ class Handlers:
         return a
 
     def bienvenida_handler(self, message, user_id, username):
-        self.chat_sessions[user_id] = {"step": "seleccion_bienvenida"}
+        self.chat_sessions[user_id] = {"step": "seleccion_bienvenida","nombre":username}
         
         # Obtener carreras desde Redis
         opciones_texto = "\n".join([f"{idx+1}) {opc}" for idx, opc in enumerate(self.opciones)])
