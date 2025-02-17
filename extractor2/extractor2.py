@@ -3,7 +3,7 @@ import redis
 from dotenv import load_dotenv
 import os 
 import json
-from util import normalizar_texto, limpiar_clave_json
+from ..util import normalizar_texto, limpiar_clave_json
 
 load_dotenv()
 
