@@ -17,7 +17,7 @@ BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 app = FastAPI()
 
 # Conectar a Redis
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 # Diccionario de sesiones por usuario
 chat_sessions = {}

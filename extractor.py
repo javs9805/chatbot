@@ -56,7 +56,7 @@ def main():
             client.json().set("por_carrera", f"$.{sheet}", {})
             client.json().set("por_carrera", f"$.{sheet}.asignaturas", {})
             # Leer los primeros 15 registros para inspección
-            df = pd.read_excel(file_path, sheet_name=sheet, skiprows=10)
+            df = pd.read_excel(file_path, sheet_name=sheet, skiprows=10, dtype=str, keep_default_na=False)
             df = df.map(normalizar_texto)
 
             #C,J,M,N
@@ -67,7 +67,7 @@ def main():
                 nom_prof = row.iloc[13] if not pd.isna(row.iloc[13]) else "No disponible"
                 ape_prof = row.iloc[12] if not pd.isna(row.iloc[12]) else "No disponible"
                 clases = verificar_dias_de_clase(row)
-                if not pd.isna(str_asignatura) and not pd.isna(seccion):
+                if str_asignatura != "" and seccion != "":
                     print(f"Procesando '{str_asignatura}' - {seccion}")
                     print("la asignatura no existe" if len(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}")) == 0 else "la asignatura existe")
                     print("la seccion de la asignatura no existe" if len(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}.secciones.{seccion}")) == 0 else "la seccion de la asignatura existe")
@@ -90,7 +90,7 @@ def main():
                             return
                     elif len(client.json().get("por_carrera",f"$.{sheet}.asignaturas.{id_asignatura}.secciones.{seccion}")) == 0:
                         try:
-                            print(f"se agrega la seccion {seccion} de '{str_asignatura}'")
+                            print(f"se agrega la seccion {seccion} de '{str_asignatura}\n'")
                             secciones_asignatura = client.json().get("por_carrera", f"$.{sheet}.asignaturas.{id_asignatura}.secciones")[0]
                             asig_datos = {
                                 "nom_prof": nom_prof,
