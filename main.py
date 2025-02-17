@@ -104,7 +104,7 @@ def chat(user_id: str, message: str, username:str):
                     carreras_texto = "\n".join([f"{idx+1}) {carrera}" for idx, carrera in enumerate(carreras)])
                     chat_sessions[user_id]["step"] = "seleccion_carrera"
                     return {"response": "Por favor, ingresa la carrera a la que perteneces:\n"
-                                        f"{carreras_texto}\n\nSelecciona una opción o 0 para volver atrás."}
+                                        f"{carreras_texto}\n\nSelecciona una opción."}
 
                 if 0 <= seleccion < len(materias_paginadas[chat_sessions[user_id]["page"]]):
                     materia = limpiar_clave_json(materias_paginadas[chat_sessions[user_id]["page"]][seleccion])
@@ -187,9 +187,9 @@ def chat(user_id: str, message: str, username:str):
                     clases_texto = ""
                     for dia, clase in seccion_data["clases"].items():
                         if clase["horario"] != "" and clase['aula'] != "":
-                            clases_texto = clases_texto + f"{dia}: {clase['horario']} - Aula: {clase['aula']}"
+                            clases_texto = clases_texto + f"{dia}: {clase['horario']} - Aula: {clase['aula']}\n"
                         elif clase['horario'] != "":
-                            clases_texto = clases_texto + f"{dia}: {clase['horario']} - Aula: NO DISPONIBLE"
+                            clases_texto = clases_texto + f"{dia}: {clase['horario']} - Aula: NO DISPONIBLE\n"
                     if clases_texto != "":
                         respuesta = (f"Estos son los datos de {str_materia} para la sección {seccion}:\n"
                                 f"👨‍🏫 Profesor: {seccion_data['nom_prof']} {seccion_data['ape_prof']}\n"
