@@ -14,18 +14,18 @@ f = open("materias.txt","w")
 REDIS_HOST = os.getenv("url_redis")
 REDIS_PORT = os.getenv("port_redis")
 REDIS_DB = os.getenv("db_redis")
-
+DIA = "Martes"
 
 redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
 # Cargar el archivo Excel
-file_path = "Aulas LUNES 170225.xlsx"
+file_path = f"Aulas {DIA} 170225.xlsx"
 df = pd.read_excel(file_path, sheet_name="2025_1", skiprows=19, dtype=str, keep_default_na=False)  # Omitir las primeras 19 filas
 
 # Seleccionar columnas relevantes
-df = df.iloc[:, [1, 15, 22, 72]]  # B, P, W, BU
+#df = df.iloc[:, [1, 15, 22, 73]]  # B, P, W, BU
 
-df.columns = ["asignatura", "carrera", "seccion", "aula"]
+#df.columns = ["asignatura", "carrera", "seccion", "aula"]
 
 # Limpiar datos eliminando filas vacías
 df = df.dropna()
@@ -35,17 +35,18 @@ actualizaciones = 0
 no_actualizado = 0
 for _, row in df.iterrows():
     try:
-        carrera = row["carrera"]
-        str_asignatura = row["asignatura"]
-        id_asignatura = normalizar_texto(limpiar_clave_json(row["asignatura"]))
-        seccion = row["seccion"]
-        aula = row["aula"]
+        carrera = row.iloc[15]
+        str_asignatura = row.iloc[1]
+        id_asignatura = normalizar_texto(limpiar_clave_json(row.iloc[1]))
+        seccion = row.iloc[22]
+        aula = row.iloc[73]
+#        print(f"se actualizo {id_asignatura} - {carrera} - {seccion} - {aula} - {DIA}: ")
         if carrera and str_asignatura and seccion and aula:
-            res = redis_client.json().get("por_carrera",f"$.{carrera}.asignaturas.{id_asignatura}.secciones.{seccion}.clases.Lunes.aula")
-            if res != aula:
-                redis_client.json().set("por_carrera",f"$.{carrera}.asignaturas.{id_asignatura}.secciones.{seccion}.clases.Lunes.aula",aula)
-                res = redis_client.json().get("por_carrera",f"$.{carrera}.asignaturas.{id_asignatura}.secciones.{seccion}.clases.Lunes.aula")
-                print(f"se actualizo {id_asignatura} - {carrera} - {seccion} - {aula}: {res}")
+            resAnt = redis_client.json().get("por_carrera",f"$.{carrera}.asignaturas.{id_asignatura}.secciones.{seccion}.clases.{DIA}.aula")
+            if resAnt != aula:
+                redis_client.json().set("por_carrera",f"$.{carrera}.asignaturas.{id_asignatura}.secciones.{seccion}.clases.{DIA}.aula",aula)
+                res = redis_client.json().get("por_carrera",f"$.{carrera}.asignaturas.{id_asignatura}.secciones.{seccion}.clases.{DIA}.aula")
+                print(f"se actualizo {id_asignatura} - {carrera} - {seccion} - {aula} - {DIA}: {resAnt}/{res}")
                 actualizaciones += 1
         else:
             no_actualizado += 1
