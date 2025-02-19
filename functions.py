@@ -1,4 +1,4 @@
-from util import limpiar_clave_json, split_array, normalizar_texto
+from util import limpiar_clave_json, split_array, normalizar_texto, obtener_timestamp_py
 import redis
 import json
 from dotenv import load_dotenv
@@ -16,9 +16,30 @@ class Handlers:
     chat_sessions = {}
     r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     PAGE_SIZE = 25
-    opciones = ["Que es TVNF?", "Información acerca de las aulas"]
+    opciones = ["Que es TVNF?", "Información acerca de las aulas", "Diego vs Lucas"]
     REDIS_LOGS = "chatbot_steps"
     REDIS_JSON_CARRERAS = "por_carrera"
+    msg_competencia = """
+📣🔥 ¡LA BATALLA DEFINITIVA YA LLEGÓ! 🔥📣
+
+⚔ DIEGOS vs LUCAS ⚔
+
+Dos nombres, una sola gloria.
+Los Diegos, astutos y feroces.
+Los Lucas, imparables y demoledores.
+
+💰 Las apuestas están abiertas.
+🔥 Solo uno será el campeón.
+
+🚀 ¡Elegí tu equipo y sé parte de la histórica batalla hoy a las 16hs en el Bloque A! 🚀
+⚠️ Decide sabiamente ya que solo puedes votar una vez y las votaciones son hasta las 16hs. ⚠️
+
+1) Team Diego.
+2) Team Lucas.
+0) Seguiré pensando.
+"""
+
+    
     def getChatSessions(self):
         return self.chat_sessions
 
@@ -65,7 +86,36 @@ class Handlers:
                 opciones_carreras = "\n".join([f"{idx+1}) {seccion}" for idx, seccion in enumerate(carreras)])
                 return {"text": f"Porfavor selecciona tu carrera:\n{opciones_carreras}\n\nSelecciona una de ellas enviando el número correspondiente o presiona 0 para volver atras."}
             
-            
+            elif seleccion == 2:# Diego vs Lucas
+                now = obtener_timestamp_py()
+                hoy_a_las_16 = now.replace(hour=16, minute=00, second=0, microsecond=0)
+                if now > hoy_a_las_16:
+                    del self.chat_sessions[user_id]
+                    print("📌 Ya pasó las 16:00 en Paraguay.")
+                    jsonganador = self.obtener_ganador_handler()
+                    str_ganador = jsonganador["ganador"]
+                    numeros_ganador = jsonganador["votos"]
+                    if str_ganador != "empate":
+                        return {"text": "🏆🔥 ¡LA BATALLA HA TERMINADO! 🔥🏆\n"
+                                                "Después de un duelo legendario, solo uno quedó en pie…\n\n"
+                                                f"⚔️ LOS {str_ganador} SON LOS CAMPEONES ABSOLUTOS CON {numeros_ganador} VOTOS! ⚔️\n\n"
+                                                "🌪️ Gloria eterna para los vencedores. Respeto para los caídos.\n"
+                                                "💥 ¡La historia se ha escrito hoy! 💥"
+                                }
+                    else:
+                        return {"text": "🏆⚔️ ¡BATALLA ÉPICA, FINAL LEGENDARIO! ⚔️🏆\n\n"
+                                                "Los Diegos lucharon con honor.\n"
+                                                "Los Lucas resistieron con furia.\n"
+                                                "💥 Ninguno cayó. Ninguno cedió.\n\n"
+                                                f"🔥 ¡Es un EMPATE ÉPICO CON {numeros_ganador} VOTOS PARA CADA UNO! 🔥\n\n"
+                                                "🌪️ Dos nombres, una leyenda.\n"
+                                                "¡La historia aún no ha terminado! ⏳\n"
+                                }
+                else:
+                    print("📌 Aún no son las 16:00 en Paraguay.")
+                    self.chat_sessions[user_id]["step"] = "diego_vs_lucas"
+                    return {"text": self.msg_competencia}
+
             
             else:
                 self.registrar_estado("seleccion_bienvenida_invalido")
@@ -74,7 +124,63 @@ class Handlers:
             self.registrar_estado("seleccion_bienvenida_error")
             return {"text": "Ingresa un número válido."}
         
+    
+    def obtener_ganador_handler(self):
+        votos_diegos = int(self.r.json().get("votacion","$.diego")[0])
+        votos_lucas = int(self.r.json().get("votacion","$.lucas")[0])
         
+        if votos_diegos > votos_lucas:
+            return {"ganador": "DIEGOS", "votos": votos_diegos}
+        elif votos_lucas > votos_diegos:
+            return {"ganador": "LUCAS", "votos": votos_lucas}
+        else:
+            return {"ganador": "empate", "votos": votos_diegos}
+
+        
+    def diego_vs_lucas_handler(self, message, user_id, username):
+        votacion = "votacion"
+        try:
+            if not self.r.exists(votacion):
+                print("no existe el json, creando json")
+                self.r.json().set(votacion, "$", {"diego": 0, "lucas": 0, "votantes": []})
+            datos_votacion = self.r.json().get(votacion)
+
+            # Verificar si el usuario ya votó
+            if user_id in datos_votacion["votantes"]:
+                print("el usuario ya ha votado")
+                del self.chat_sessions[user_id]
+                return {"text": f"⚠️ {username}, ya has votado y no puedes votar de nuevo."}
+
+            # Si el mensaje es 1 -> Voto para Diego
+            if message == "1":
+                print("el usuario voto por diego")
+                del self.chat_sessions[user_id]
+                self.r.json().numincrby(votacion, "$.diego", 1)
+                self.r.json().arrappend(votacion, "$.votantes", user_id)
+                return {"text": f"✅ {username} has elegido ser del team Diego. ¡Gracias por tu voto! \nTe esperamos hoy en el Bloque A a las 16hs para ver quien se llevará el prestigio a casa."}
+
+            # Si el mensaje es 2 -> Voto para Lucas
+            elif message == "2":
+                print("el usuario voto por lucas")
+                del self.chat_sessions[user_id]
+                self.r.json().numincrby(votacion, "$.lucas", 1)
+                self.r.json().arrappend(votacion, "$.votantes", user_id)
+                return {"text": f"✅ {username} has elegido ser del team Lucas. ¡Gracias por tu voto! \nTe esperamos hoy en el Bloque A a las 16hs para ver quien se llevará el prestigio a casa."}
+
+            # Si el mensaje es 0 -> No hacer nada
+            elif message == "0":
+                print("el usuario no voto")
+                del self.chat_sessions[user_id]
+                return {"text": f"Lo sé, es una decisión dificil, tomate tu tiempo ya que solo puedes votar una vez."}
+
+            else:
+                return {"text": "Ingresa un número válido."}
+
+        except ValueError:
+            self.registrar_estado("seleccionar_carrera_error")
+            return {"text": "Ingresa un número válido."}
+
+
     def seleccion_carrera_handler(self, message, user_id, username):
         try:
             seleccion = int(message.strip()) - 1

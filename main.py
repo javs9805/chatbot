@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Query
 import requests
-from util import normalizar_texto, limpiar_clave_json, split_array
 from functions import Handlers
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -79,6 +78,10 @@ def chat(user_id: str, message: str, username:str):
     if abm.chat_sessions[user_id]["step"] == "seleccion_bienvenida":
         abm.registrar_estado(abm.chat_sessions[user_id]["step"])
         return abm.seleccion_bienvenida_handler(message, user_id, username)
+
+    if abm.chat_sessions[user_id]["step"] == "diego_vs_lucas":
+        abm.registrar_estado(abm.chat_sessions[user_id]["step"])
+        return abm.diego_vs_lucas_handler(message, user_id, username)
 
     # Paso 1: Seleccionar Carrera
     if abm.chat_sessions[user_id]["step"] == "seleccion_carrera":
