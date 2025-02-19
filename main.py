@@ -21,6 +21,9 @@ class TelegramUpdate(BaseModel):
     update_id: int
     message: dict
     
+class EstadoModel(BaseModel):
+    estado: str
+    
 PAGE_SIZE = 25  # Tamaño de cada página de materias
 
 @app.post("/resetear_chat_sessions")
@@ -49,6 +52,9 @@ async def telegram_webhook(update: TelegramUpdate):
     requests.post(f"{BASE_URL}/sendMessage",json=respuesta)
     return {"recibido":data, "enviado":respuesta}
 
+@app.post("/logs")
+async def loggear(est: EstadoModel):
+    abm.registrar_estado(est.model_dump()["estado"])
 
 def chat(user_id: str, message: str, username:str):
     """
@@ -58,21 +64,27 @@ def chat(user_id: str, message: str, username:str):
     # Iniciar nueva sesión si el usuario no existe o quiere reiniciar
     print(user_id not in abm.chat_sessions)
     if user_id not in abm.chat_sessions or message.lower() in ["reiniciar", "reset"]:
-        return abm.bienvenida_handler(message, user_id, username)
+        res = abm.bienvenida_handler(message, user_id, username)
+        abm.registrar_estado(abm.chat_sessions[user_id]["step"])
+        return res
 
     if abm.chat_sessions[user_id]["step"] == "seleccion_bienvenida":
+        abm.registrar_estado(abm.chat_sessions[user_id]["step"])
         return abm.seleccion_bienvenida_handler(message, user_id, username)
 
     # Paso 1: Seleccionar Carrera
     if abm.chat_sessions[user_id]["step"] == "seleccion_carrera":
+        abm.registrar_estado(abm.chat_sessions[user_id]["step"])
         return abm.seleccion_carrera_handler(message, user_id, username)
 
     # Paso 2: Seleccionar Materia
     if abm.chat_sessions[user_id]["step"] == "seleccion_materia":
+        abm.registrar_estado(abm.chat_sessions[user_id]["step"])
         return abm.seleccionar_materia_handler(message, user_id, username)
 
     # Paso 3: Seleccionar Sección
     if abm.chat_sessions[user_id]["step"] == "seleccion_seccion":
+        abm.registrar_estado(abm.chat_sessions[user_id]["step"])
         return abm.seleccionar_seccion_handler(message, user_id, username)
 
     return {"response": "Algo salió mal. Intenta nuevamente."}

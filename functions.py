@@ -17,7 +17,8 @@ class Handlers:
     r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     PAGE_SIZE = 25
     opciones = ["Que es TVNF?", "Información acerca de las aulas"]
-    
+    REDIS_LOGS = "chatbot_steps"
+    REDIS_JSON_CARRERAS = "por_carrera"
     def getChatSessions(self):
         return self.chat_sessions
 
@@ -41,7 +42,7 @@ class Handlers:
         try:
             seleccion = int(message.strip()) - 1
             if seleccion == 0:# Que es TVNF?
-                        
+                self.registrar_estado("TVNF")
                 del self.chat_sessions[user_id]
                 return {"text":"¿Qué es 'Tu Voz, Nuestra Fuerza'? ✨📢\n\n"
                                     "'Tu Voz, Nuestra Fuerza' es más que un lema; es un sentimiento que nos une como una gran familia 🤝\\."
@@ -60,22 +61,24 @@ class Handlers:
 
             elif seleccion == 1:# Información acerca de las aulas
                 self.chat_sessions[user_id]["step"] = "seleccion_carrera"
-                carreras = self.r.json().get("por_carrera","$")[0].keys()
+                carreras = self.r.json().get(self.REDIS_JSON_CARRERAS,"$")[0].keys()
                 opciones_carreras = "\n".join([f"{idx+1}) {seccion}" for idx, seccion in enumerate(carreras)])
                 return {"text": f"Porfavor selecciona tu carrera:\n{opciones_carreras}\n\nSelecciona una de ellas enviando el número correspondiente o presiona 0 para volver atras."}
             
             
             
             else:
+                self.registrar_estado("seleccion_bienvenida_invalido")
                 return {"text": "Selecciona una opción válida."}
         except ValueError:
+            self.registrar_estado("seleccion_bienvenida_error")
             return {"text": "Ingresa un número válido."}
         
         
     def seleccion_carrera_handler(self, message, user_id, username):
         try:
             seleccion = int(message.strip()) - 1
-            carreras = list(self.r.json().get("por_carrera",f"$")[0].keys())
+            carreras = list(self.r.json().get(self.REDIS_JSON_CARRERAS,f"$")[0].keys())
 
             if seleccion == -1:
                 self.chat_sessions[user_id] = {"step": "seleccion_bienvenida"}
@@ -93,7 +96,7 @@ class Handlers:
                 self.chat_sessions[user_id]["page"] = 0
                 
                 # Obtener materias de la carrera
-                carrera_data = self.r.json().get("por_carrera",f"$.{carrera}")[0]
+                carrera_data = self.r.json().get(self.REDIS_JSON_CARRERAS,f"$.{carrera}")[0]
                 materias = [carrera_data["asignaturas"][x]["nombre"] for x in carrera_data["asignaturas"]]
                 materias_paginadas = split_array(materias, self.PAGE_SIZE)
                 page = self.chat_sessions[user_id]["page"]
@@ -104,8 +107,10 @@ class Handlers:
                 return {"text": f"Selecciona la materia correspondiente a {carrera} (Página {page+1}/{len(materias_paginadas)}):\n"
                                 f"{materias_texto}{nav_text}"}
             else:
+                self.registrar_estado("seleccionar_carrera_invalido")
                 return {"text": "Selecciona una opción válida."}
         except ValueError:
+            self.registrar_estado("seleccionar_carrera_error")
             return {"text": "Ingresa un número válido."}
 
 
@@ -113,7 +118,7 @@ class Handlers:
         try:
             # Obtener la carrera seleccionada
             carrera = self.chat_sessions[user_id]["carrera"]
-            carrera_data = self.r.json().get("por_carrera", f"$.{carrera}")[0]
+            carrera_data = self.r.json().get(self.REDIS_JSON_CARRERAS, f"$.{carrera}")[0]
             materias = [carrera_data["asignaturas"][x]["nombre"] for x in carrera_data["asignaturas"]]
 
             # Dividir las materias en páginas
@@ -121,7 +126,7 @@ class Handlers:
             if message.strip().isnumeric():
                 seleccion = int(message.strip()) - 1
                 if seleccion == -1:
-                    carreras = self.r.json().get("por_carrera",f"$")[0].keys()
+                    carreras = self.r.json().get(self.REDIS_JSON_CARRERAS,f"$")[0].keys()
                     carreras_texto = "\n".join([f"{idx+1}) {carrera}" for idx, carrera in enumerate(carreras)])
                     self.chat_sessions[user_id]["step"] = "seleccion_carrera"
                     return {"text": "Por favor, ingresa la carrera a la que perteneces:\n"
@@ -142,6 +147,7 @@ class Handlers:
                     return {"text": f"Estas son las secciones que conozco de {str_materia}:\n"
                                         f"{secciones_texto}\n\nSelecciona una opción o 0 para volver atrás."}
                 else:
+                    self.registrar_estado("seleccionar_materia_invalido")
                     return {"text": "Selecciona una opción válida, 0 para seleccionar carrera y 'S' o 'A' para desplazarte entre las opciones."}
             else:
                 # Navegación entre páginas
@@ -168,6 +174,7 @@ class Handlers:
                 return {"text": f"Selecciona la materia correspondiente a {carrera} (Página {page+1}/{len(materias_paginadas)}):\n"
                                     f"{materias_texto}{nav_text}"}
         except ValueError:
+            self.registrar_estado("seleccionar_materia_error")
             return {"text": "Selecciona una opción válida, 0 para seleccionar carrera y 'S' o 'A' para desplazarte entre las opciones."}
 
         
@@ -176,7 +183,7 @@ class Handlers:
             seleccion = int(message.strip()) - 1
             carrera = self.chat_sessions[user_id]["carrera"]
             materia = self.chat_sessions[user_id]["materia"]
-            carrera_data = self.r.json().get("por_carrera",f"$.{carrera}")[0]
+            carrera_data = self.r.json().get(self.REDIS_JSON_CARRERAS,f"$.{carrera}")[0]
             secciones = list(carrera_data["asignaturas"][materia]["secciones"].keys())
 
             if seleccion == -1:
@@ -184,7 +191,7 @@ class Handlers:
                 self.chat_sessions[user_id]["page"] = 0
                 
                 # Obtener materias de la carrera
-                carrera_data = self.r.json().get("por_carrera",f"$.{carrera}")[0]
+                carrera_data = self.r.json().get(self.REDIS_JSON_CARRERAS,f"$.{carrera}")[0]
                 materias = [carrera_data["asignaturas"][x]["nombre"] for x in carrera_data["asignaturas"]]
                 materias_paginadas = split_array(materias, self.PAGE_SIZE)
                 page = self.chat_sessions[user_id]["page"]
@@ -226,6 +233,23 @@ class Handlers:
 
                 return {"text": respuesta}
             else:
+                self.registrar_estado("seleccionar_seccion_invalido")
                 return {"text": "Selecciona una opción válida o 0 para volver atrás."}
         except ValueError:
+            self.registrar_estado("seleccionar_seccion_error")
             return {"text": "Ingresa un número válido."}
+    
+    def registrar_estado(self, step):
+        self.r.json().get("logs","$")
+        print("dejando log")
+
+        # Inicializar el JSON en Redis si no existe
+        if not self.r.exists(self.REDIS_LOGS):
+            self.r.json().set(self.REDIS_LOGS, "$", {})  # Se crea un JSON vacío
+            
+        # Verificar si el step ya existe en el JSON, si no, inicializarlo en 0
+        if not self.r.json().get(self.REDIS_LOGS, f"$.{step}"):
+            self.r.json().set(self.REDIS_LOGS, f"$.{step}", 0)
+
+        # Incrementar el contador en Redis JSON
+        self.r.json().numincrby(self.REDIS_LOGS, f"$.{step}", 1)
