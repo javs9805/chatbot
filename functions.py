@@ -253,3 +253,7 @@ class Handlers:
 
         # Incrementar el contador en Redis JSON
         self.r.json().numincrby(self.REDIS_LOGS, f"$.{step}", 1)
+        
+    def obtener_estadisticas_json(self):
+        """Devuelve el número de usuarios que han pasado por cada step en formato JSON."""
+        return self.r.json().get(self.REDIS_LOGS)

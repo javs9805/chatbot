@@ -39,6 +39,17 @@ async def getChatSessions(key:str):
         return abm.getChatSessions()
     return "No tenes acceso"
 
+@app.post("/logs/set")
+async def loggear(key: str, estado: str):
+    if key == "lokita304":
+        abm.registrar_estado(estado)
+
+@app.post("/logs/get")
+async def loggear(key: str):
+    if key == "lokita304":
+        return abm.obtener_estadisticas_json()
+
+
 @app.post("/")
 async def telegram_webhook(update: TelegramUpdate):
     data = update.model_dump()
@@ -52,9 +63,6 @@ async def telegram_webhook(update: TelegramUpdate):
     requests.post(f"{BASE_URL}/sendMessage",json=respuesta)
     return {"recibido":data, "enviado":respuesta}
 
-@app.post("/logs")
-async def loggear(est: EstadoModel):
-    abm.registrar_estado(est.model_dump()["estado"])
 
 def chat(user_id: str, message: str, username:str):
     """
