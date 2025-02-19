@@ -21,7 +21,7 @@ file_path = f"{DIA}.xlsx"
 df = pd.read_excel(file_path, sheet_name="2025_1", skiprows=19, dtype=str, keep_default_na=False)  # Omitir las primeras 19 filas
 
 # Seleccionar columnas relevantes
-df = df.iloc[:, [1, 15, 22, 48, 49, 75]]  # B, P, W, BU
+df = df.iloc[:, [1, 15, 22, 47, 48, 75]]  # B, P, W, BU
 
 df.columns = ["asignatura", "carrera", "seccion", "Apellido", "Nombre", "aula"]
 
