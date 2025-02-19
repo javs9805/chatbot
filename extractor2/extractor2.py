@@ -8,7 +8,6 @@ from util import normalizar_texto, limpiar_clave_json
 load_dotenv()
 
 # Ruta del archivo de Excel
-file_path = "Martes.xlsx"  # Cambia esto por la ruta real de tu archivo
 
 REDIS_HOST = os.getenv("url_redis")
 REDIS_PORT = os.getenv("port_redis")
