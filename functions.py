@@ -16,7 +16,7 @@ class Handlers:
     chat_sessions = {}
     r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     PAGE_SIZE = 25
-    opciones = ["Que es TVNF?", "Información acerca de las aulas", "Diego vs Lucas"]
+    opciones = ["Que es TVNF?", "Información acerca de las aulas"]
     REDIS_LOGS = "chatbot_steps"
     REDIS_JSON_CARRERAS = "por_carrera"
     msg_competencia = """
@@ -86,36 +86,6 @@ Los Lucas, imparables y demoledores.
                 opciones_carreras = "\n".join([f"{idx+1}) {seccion}" for idx, seccion in enumerate(carreras)])
                 return {"text": f"Porfavor selecciona tu carrera:\n{opciones_carreras}\n\nSelecciona una de ellas enviando el número correspondiente o presiona 0 para volver atras."}
             
-            elif seleccion == 2:# Diego vs Lucas
-                now = obtener_timestamp_py()
-                hoy_a_las_16 = now.replace(hour=16, minute=00, second=0, microsecond=0)
-                if now > hoy_a_las_16:
-                    del self.chat_sessions[user_id]
-                    print("📌 Ya pasó las 16:00 en Paraguay.")
-                    jsonganador = self.obtener_ganador_handler()
-                    str_ganador = jsonganador["ganador"]
-                    numeros_ganador = jsonganador["votos"]
-                    if str_ganador != "empate":
-                        return {"text": "🏆🔥 ¡LA BATALLA HA TERMINADO! 🔥🏆\n"
-                                                "Después de un duelo legendario, solo uno quedó en pie…\n\n"
-                                                f"⚔️ LOS {str_ganador} SON LOS CAMPEONES ABSOLUTOS CON {numeros_ganador} VOTOS! ⚔️\n\n"
-                                                "🌪️ Gloria eterna para los vencedores. Respeto para los caídos.\n"
-                                                "💥 ¡La historia se ha escrito hoy! 💥"
-                                }
-                    else:
-                        return {"text": "🏆⚔️ ¡BATALLA ÉPICA, FINAL LEGENDARIO! ⚔️🏆\n\n"
-                                                "Los Diegos lucharon con honor.\n"
-                                                "Los Lucas resistieron con furia.\n"
-                                                "💥 Ninguno cayó. Ninguno cedió.\n\n"
-                                                f"🔥 ¡Es un EMPATE ÉPICO CON {numeros_ganador} VOTOS PARA CADA UNO! 🔥\n\n"
-                                                "🌪️ Dos nombres, una leyenda.\n"
-                                                "¡La historia aún no ha terminado! ⏳\n"
-                                }
-                else:
-                    print("📌 Aún no son las 16:00 en Paraguay.")
-                    self.chat_sessions[user_id]["step"] = "diego_vs_lucas"
-                    return {"text": self.msg_competencia}
-
             
             else:
                 self.registrar_estado("seleccion_bienvenida_invalido")

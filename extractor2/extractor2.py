@@ -12,7 +12,7 @@ load_dotenv()
 REDIS_HOST = os.getenv("url_redis")
 REDIS_PORT = os.getenv("port_redis")
 REDIS_DB = os.getenv("db_redis")
-DIA = "Miercoles"
+DIA = "Jueves"
 
 redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
@@ -21,7 +21,7 @@ file_path = f"{DIA}.xlsx"
 df = pd.read_excel(file_path, sheet_name="2025_1", skiprows=19, dtype=str, keep_default_na=False)  # Omitir las primeras 19 filas
 
 # Seleccionar columnas relevantes
-df = df.iloc[:, [1, 15, 22, 47, 48, 75]]  # B, P, W, BU
+df = df.iloc[:, [1, 15, 22, 47, 48, 78]]  # B, P, W, BU
 
 df.columns = ["asignatura", "carrera", "seccion", "Apellido", "Nombre", "aula"]
 
